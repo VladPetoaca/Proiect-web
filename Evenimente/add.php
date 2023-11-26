@@ -126,6 +126,12 @@ $error = '';
             <label for="locatia"><strong>Locația: </strong></label> <input type="text" name="locatia" value=""/>
             <br>
             <br>
+            <label for="pret"><strong>Preț: </strong></label> <input type="text" name="pret" value=""/>
+            <br>
+            <br>
+            <label for="contact"><strong>Contact: </strong></label> <input type="text" name="contact" value=""/>
+            <br>
+            <br>
             <div id="container-speakeri">
                 <label for="speakeri"><strong>Speakeri: </strong></label><input type="text" name="speakeri[]" id="speakeri" />
                 <button id="addSpeakerBtn">Adaugă speaker</button>
@@ -150,14 +156,57 @@ $error = '';
             <br>
             <br>
             <br>
-            <input type="submit" name="submit" value="Submit" />
+            <input type="submit" name="submit" value="Adaugă eveniment" />
             <a href="view.php">Catalog</a>
         </div>
     </form>
     </body>
 </html>
 
+
 <?php
+function getOrCreateID($tableName, $columnName, $value)
+{
+    global $mysqli;
+
+    $sql = "SELECT ID FROM $tableName WHERE $columnName = ?";
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("s", $value);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        // The record already exists, get the ID
+        $stmt->bind_result($id);
+        $stmt->fetch();
+        $stmt->close();
+        return $id;
+    } else {
+        // The record doesn't exist, insert and get the new ID
+        $stmt->close();
+
+        $insertSql = "INSERT INTO $tableName ($columnName) VALUES (?)";
+        $insertStmt = $mysqli->prepare($insertSql);
+        $insertStmt->bind_param("s", $value);
+        $insertStmt->execute();
+        $insertStmt->close();
+
+        // Return the newly inserted ID
+        return $mysqli->insert_id;
+    }
+}
+
+// Function to insert data into the event_speaker/partner/sponsor table
+function insertIntoEventTable($eveniment_id, $table, $column, $data)
+{
+    global $mysqli;
+
+    $sql = "INSERT INTO $table (Eveniment_ID, $column) VALUES (?, ?)";
+    $stmt = $mysqli->prepare($sql);
+    $stmt->bind_param("is", $eveniment_id, $data);
+    $stmt->execute();
+    $stmt->close();
+}
 
 if (isset($_POST['submit'])) {
     // Preluam datele de pe formular
@@ -166,60 +215,68 @@ if (isset($_POST['submit'])) {
     $data = htmlentities($_POST['data'], ENT_QUOTES);
     $ora = htmlentities($_POST['ora'], ENT_QUOTES);
     $locatia = htmlentities($_POST['locatia'], ENT_QUOTES);
-    $speaker_id = htmlentities($_POST['speaker_id']);
-    $parteneri_id = htmlentities($_POST['parteneri_id']);
-    $sponsori_id = htmlentities($_POST['sponsori_id']);
+    $pret = strval($_POST['pret']);
+    $contact = htmlentities($_POST['contact'], ENT_QUOTES);
+    $speakeri = $_POST['speakeri'];
+    $parteneri = $_POST['parteneri'];
+    $sponsori = $_POST['sponsori'];
 
     // Verificam daca sunt completate
-    if (empty($titlu) || empty($descriere_eveniment) || empty($data) || empty($ora) || empty($locatia) || empty($speaker_id) || empty($parteneri_id) || empty($sponsori_id)) {
+    if (empty($titlu) || empty($descriere_eveniment) || empty($data) || empty($ora) || empty($locatia) || empty($speakeri) || empty($parteneri) || empty($sponsori) || empty($pret) || empty($contact)) {
         // Daca sunt goale se afiseaza un mesaj
-        $error = 'ERROR: Campuri goale!';
+        $error = 'EROARE: Campuri goale!';
     } else {
         // Insert eveniment
-        $sql = "INSERT INTO evenimente (Titlu, Descriere, Data, Ora, Locatia) VALUES (?, ?, ?, ?, ?)";
-        if ($stmt = $mysqli->prepare($sql)) {
-            $stmt->bind_param("sssss", $titlu, $descriere_eveniment, $data, $ora, $locatia);
-            if ($stmt->execute()) {
-                // Get the last inserted ID
-                $eveniment_id = $mysqli->insert_id;
+        $sql = "INSERT INTO evenimente (Titlu, Descriere, Data, Ora, Locatia, Pret, Contact) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $mysqli->prepare($sql);
 
-                // Insert into eveniment_speakeri table
-                $sql_speaker = "INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)";
-                $stmt_speaker = $mysqli->prepare($sql_speaker);
-                $stmt_speaker->bind_param("ii", $eveniment_id, $speaker_id);
-                $stmt_speaker->execute();
-                $stmt_speaker->close();
+        // Check for errors in prepare
+        if (!$stmt) {
+            die("EROARE la pregatirea insert: " . $mysqli->error);
+        }
 
-                // Insert into eveniment_parteneri table
-                $sql_parteneri = "INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)";
-                $stmt_parteneri = $mysqli->prepare($sql_parteneri);
-                $stmt_parteneri->bind_param("ii", $eveniment_id, $parteneri_id);
-                $stmt_parteneri->execute();
-                $stmt_parteneri->close();
+        $stmt->bind_param("sssssss", $titlu, $descriere_eveniment, $data, $ora, $locatia, $pret, $contact);
+        // Check for errors in bind_param
+        if (!$stmt) {
+            die("EROARE la bind_param: " . $mysqli->error);
+        }
 
-                // Insert into eveniment_sponsori table
-                $sql_sponsori = "INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)";
-                $stmt_sponsori = $mysqli->prepare($sql_sponsori);
-                $stmt_sponsori->bind_param("ii", $eveniment_id, $sponsori_id);
-                $stmt_sponsori->execute();
-                $stmt_sponsori->close();
-                echo "Evenimentul a fost adăugat cu succes!";
-            } else {
-                echo "EROARE: Nu se poate executa insert.";
+        if ($stmt->execute()) {
+            // Get the last inserted ID
+            $eveniment_id = $mysqli->insert_id;
+
+            // Insert into eveniment_speakeri table
+            foreach ($speakeri as $speaker) {
+                $speaker_id = getOrCreateID('speakeri', 'Nume', $speaker);
+                insertIntoEventTable($eveniment_id, 'eveniment_speakeri', 'Speakeri_ID', $speaker_id);
             }
 
-            $stmt->close();
+            // Insert into eveniment_parteneri table
+            foreach ($parteneri as $partener) {
+                $partener_id = getOrCreateID('parteneri', 'Nume', $partener);
+                insertIntoEventTable($eveniment_id, 'eveniment_parteneri', 'Parteneri_ID', $partener_id);
+            }
+
+            // Insert into eveniment_sponsori table
+            foreach ($sponsori as $sponsor) {
+                $sponsor_id = getOrCreateID('sponsori', 'Nume', $sponsor);
+                insertIntoEventTable($eveniment_id, 'eveniment_sponsori', 'Sponsori_ID', $sponsor_id);
+            }
+
+            echo "Evenimentul a fost adăugat cu succes!";
         } else {
-            echo "EROARE: " . $mysqli->error;
+            echo "EROARE la executarea insert: " . $stmt->error;
         }
+
+        $stmt->close();
     }
 }
-
-// Close the database connection
-$mysqli->close();
-
-// Display error message if any
 if ($error != '') {
     echo "<div style='padding:4px; border:1px solid red; color:red'>" . $error . "</div>";
 }
+
+$mysqli->close();
+
+
 ?>
+
