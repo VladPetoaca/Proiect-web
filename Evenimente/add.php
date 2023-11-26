@@ -28,6 +28,21 @@ $error = '';
                     event.preventDefault();
                     addSponsor();
                 });
+
+                document.getElementById('removeSpeakerBtn').addEventListener('click', function (event) {
+                    event.preventDefault();
+                    removeSpeaker();
+                });
+
+                document.getElementById('removePartenerBtn').addEventListener('click', function (event) {
+                    event.preventDefault();
+                    removePartener();
+                });
+
+                document.getElementById('removeSponsorBtn').addEventListener('click', function (event) {
+                    event.preventDefault();
+                    removeSponsor();
+                });
             });
 
             function addSpeaker() {
@@ -59,6 +74,36 @@ $error = '';
                 sponsorSection.appendChild(document.createElement('br'));
                 sponsorSection.appendChild(newSponsorInput);
             }
+
+            function removeSpeaker() {
+                var speakerSection = document.getElementById('container-speakeri');
+                var lastSpeakerInput = speakerSection.lastElementChild;
+
+                if (lastSpeakerInput && lastSpeakerInput.nodeName === 'INPUT') {
+                    speakerSection.removeChild(lastSpeakerInput.previousElementSibling);
+                    speakerSection.removeChild(lastSpeakerInput);
+                }
+            }
+
+            function removePartener() {
+                var partenerSection = document.getElementById('container-parteneri');
+                var lastPartenerInput = partenerSection.lastElementChild;
+
+                if (lastPartenerInput && lastPartenerInput.nodeName === 'INPUT') {
+                    partenerSection.removeChild(lastPartenerInput.previousElementSibling);
+                    partenerSection.removeChild(lastPartenerInput);
+                }
+            }
+
+            function removeSponsor() {
+                var sponsorSection = document.getElementById('container-sponsori');
+                var lastSponsorInput = sponsorSection.lastElementChild;
+
+                if (lastSponsorInput && lastSponsorInput.nodeName === 'INPUT') {
+                    sponsorSection.removeChild(lastSponsorInput.previousElementSibling);
+                    sponsorSection.removeChild(lastSponsorInput);
+                }
+            }
         </script>
 
     </head>
@@ -83,21 +128,24 @@ $error = '';
             <br>
             <div id="container-speakeri">
                 <label for="speakeri"><strong>Speakeri: </strong></label><input type="text" name="speakeri[]" id="speakeri" />
-                <button id="addSpeakerBtn" onclick="addSpeaker()">Adaugă speaker</button>
+                <button id="addSpeakerBtn">Adaugă speaker</button>
+                <button id="removeSpeakerBtn">Șterge speaker</button>
             </div>
             <br>
             <br>
 
             <div id="container-parteneri">
                 <label for="parteneri"><strong>Parteneri: </strong></label> <input type="text" name="parteneri[]" id="parteneri" value=""/>
-                <button id="addPartenerBtn" onclick="addPartener()">Adaugă partener</button>
+                <button id="addPartenerBtn">Adaugă partener</button>
+                <button id="removePartenerBtn">Șterge partener</button>
             </div>
             <br>
             <br>
 
             <div id="container-sponsori">
                 <label for="sponsori"><strong>Sponsori: </strong></label> <input type="text" name="sponsori[]" id="sponsori" value=""/>
-                <button id="addSponsorBtn" onclick="addSponsor()">Adaugă sponsor</button>
+                <button id="addSponsorBtn">Adaugă sponsor</button>
+                <button id="removeSponsorBtn">Șterge sponsor</button>
             </div>
             <br>
             <br>
