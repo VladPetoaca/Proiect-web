@@ -32,7 +32,7 @@ if (!isset($_SESSION['loggedin'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <h1>Acțiuni</h1>
 <ul>
-    <li><a href="public_view.php"</a>Vizualizează catalogul de evenimente</li>
+    <li><a href="view_public.php"</a>Vizualizează catalogul de evenimente</li>
 </ul>
 </body>
 </html>

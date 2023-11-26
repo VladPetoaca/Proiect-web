@@ -1,4 +1,4 @@
-<!DOCTYPE HTML>
+<!DOCTYPE HTML PUBLIC>
 <html lang="en">
 <head>
     <title>Vizualizare evenimente</title>
@@ -32,7 +32,8 @@ if ($result = $mysqli->query("SELECT
     if ($result->num_rows > 0)
     {
         echo "<table border=1 cellpadding=10>";
-        echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Locatia</th><th>Speaker</th><th>Partener</th><th>Sponsor</th><th>Detalii</th></tr>";
+        echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Locatia</th><th>Speaker</th><th>Partener</th><th>Sponsor</th><th>Detalii</th>
+<th>Bilete</th></tr>";
 
         while ($row = $result->fetch_object())
         {
@@ -45,9 +46,8 @@ if ($result = $mysqli->query("SELECT
             echo "<td>" . $row->speaker_name . "</td>";
             echo "<td>" . $row->partener_name . "</td>";
             echo "<td>" . $row->sponsor_name . "</td>";
-            echo "<td><a href='edit.php?id=" . $row->ID . "'>Modificare</a></td>";
-            echo "<td><a href='delete.php?id=" . $row->ID . "'>Stergere</a></td>";
             echo "<td><a href='./event_pages/event_" . $row->ID . ".html'>Detalii</a></td>";
+            echo "<td><a href='../../Proiect-web/Evenimente/user_login.html'>Adauga in cos</a></td>";
             echo "</tr>";
         }
 
@@ -55,7 +55,7 @@ if ($result = $mysqli->query("SELECT
     }
     else
     {
-        echo "Nu sunt evenimente în baza de date!";
+        echo "Nu sunt evenimente in tabela!";
     }
 }
 else
@@ -66,9 +66,8 @@ else
 $mysqli->close();
 ?>
 <br>
-<a href="add.php">Adaugă un eveniment nou</a>
 <br>
-<br>
-<h2><a href="admin_home.php">Acasă</a></h2>
+<h2><a href="user_home.php">Acasă</a></h2>
 </body>
 </html>
+
