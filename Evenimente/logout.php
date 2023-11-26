@@ -2,5 +2,5 @@
 session_start();
 session_destroy();
 
-header('Location: proiect_pagina_web');
+header('Location: index.html');
 ?>
