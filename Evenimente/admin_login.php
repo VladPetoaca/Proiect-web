@@ -61,7 +61,11 @@ if ($stmt = $mysqli->prepare('SELECT id, parola FROM admin WHERE user = ?')) {
             $_SESSION['name'] = $_POST['username'];
             $_SESSION['id'] = $id;
             echo 'Bine ati venit' . $_SESSION['name'] . '!';
+<<<<<<< HEAD
             header('Location: admin_home.php');
+=======
+            header('Location: home.php');
+>>>>>>> origin/main
         } else {
             echo 'Nume de utilizator sau parolă incorectă!';
         }
