@@ -196,36 +196,48 @@ function getOrCreateID($tableName, $columnName, $value)
     }
 }
 
-function insertIntoEventSpeakerTable($eveniment_id, $speaker_id)
+function insertIntoEventSpeakerTable($eveniment_id, $speaker_ids)
 {
     global $mysqli;
 
     $sql = "INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ii", $eveniment_id, $speaker_id);
-    $stmt->execute();
+
+    foreach ($speaker_ids as $speaker_id) {
+        $stmt->bind_param("ii", $eveniment_id, $speaker_id);
+        $stmt->execute();
+    }
+
     $stmt->close();
 }
 
-function insertIntoEventPartenerTable($eveniment_id, $partener_id)
+function insertIntoEventPartenerTable($eveniment_id, $partener_ids)
 {
     global $mysqli;
 
     $sql = "INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ii", $eveniment_id, $partener_id);
-    $stmt->execute();
+
+    foreach ($partener_ids as $partener_id) {
+        $stmt->bind_param("ii", $eveniment_id, $partener_id);
+        $stmt->execute();
+    }
+
     $stmt->close();
 }
 
-function insertIntoEventSponsorTable($eveniment_id, $sponsor_id)
+function insertIntoEventSponsorTable($eveniment_id, $sponsor_ids)
 {
     global $mysqli;
 
     $sql = "INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
-    $stmt->bind_param("ii", $eveniment_id, $sponsor_id);
-    $stmt->execute();
+
+    foreach ($sponsor_ids as $sponsor_id) {
+        $stmt->bind_param("ii", $eveniment_id, $sponsor_id);
+        $stmt->execute();
+    }
+
     $stmt->close();
 }
 
@@ -267,28 +279,36 @@ if (isset($_POST['submit'])) {
             // Get the last inserted ID
             $eveniment_id = $mysqli->insert_id;
 
+            $speaker_ids = array();
+            $partener_ids = array();
+            $sponsor_ids = array();
+
             // Insert into eveniment_speakeri table
             foreach ($speakeri as $speaker) {
                 $speaker_id = getOrCreateID('speakeri', 'Nume', $speaker);
-                insertIntoEventSpeakerTable($eveniment_id, $speaker_id);
+                $speaker_ids[] = $speaker_id;
             }
+            insertIntoEventSpeakerTable($eveniment_id, $speaker_ids);
 
             // Insert into eveniment_parteneri table
             foreach ($parteneri as $partener) {
                 $partener_id = getOrCreateID('parteneri', 'Nume', $partener);
-                insertIntoEventPartenerTable($eveniment_id, $partener_id);
+                $partener_ids[] = $partener_id;
             }
+            insertIntoEventPartenerTable($eveniment_id, $partener_ids);
 
             // Insert into eveniment_sponsori table
             foreach ($sponsori as $sponsor) {
                 $sponsor_id = getOrCreateID('sponsori', 'Nume', $sponsor);
-                insertIntoEventSponsorTable($eveniment_id, $sponsor_id);
+                $sponsor_ids[] = $sponsor_id;
             }
+            insertIntoEventSponsorTable($eveniment_id, $sponsor_ids);
 
             echo "Evenimentul a fost adăugat cu succes!";
         } else {
             echo "EROARE la executarea insert: " . $stmt->error;
         }
+
 
         $stmt->close();
     }
