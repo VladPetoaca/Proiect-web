@@ -1,6 +1,114 @@
 <?php
 include("config.php");
 $error = '';
+
+if (!empty($_POST['id'])) {
+    if (isset($_POST['submit'])) {
+        if (is_numeric($_POST['id'])) {
+            // preluam datele de pe formular
+            $id = $_POST['id'];
+            $titlu = htmlentities($_POST['titlu'], ENT_QUOTES);
+            $descriere_eveniment = htmlentities($_POST['descriere_eveniment'], ENT_QUOTES);
+            $data = htmlentities($_POST['data'], ENT_QUOTES);
+            $ora = htmlentities($_POST['ora'], ENT_QUOTES);
+            $locatia = htmlentities($_POST['locatia'], ENT_QUOTES);
+            $pret = strval($_POST['pret']);
+            $contact = htmlentities($_POST['contact'], ENT_QUOTES);
+            $speakeri = $_POST['speakeri'];
+            $parteneri = $_POST['parteneri'];
+            $sponsori = $_POST['sponsori'];
+
+            // verificam daca sunt completate
+            if (empty($titlu) || empty($descriere_eveniment) || empty($data) || empty($ora) || empty($locatia) || empty($speakeri) || empty($parteneri) || empty($sponsori) || empty($pret) || empty($contact)) {
+                // Daca sunt goale se afiseaza un mesaj
+                $error = 'EROARE: Campuri goale!';
+            } else {
+                // Update evenimente table
+                // ...
+
+// Update evenimente table
+                $stmt_update_evenimente = $mysqli->prepare("UPDATE evenimente
+                    SET Titlu = ?,
+                        Descriere = ?,
+                        Data = ?,
+                        Ora = ?,
+                        Locatia = ?,
+                        Pret = ?,
+                        Contact = ?
+                    WHERE ID = ?");
+
+                if ($stmt_update_evenimente) {
+                    // Bind parameters
+                    $stmt_update_evenimente->bind_param("sssssssi", $titlu, $descriere_eveniment, $data, $ora, $locatia, $pret, $contact, $id);
+
+                    // Execute the update statement
+                    if ($stmt_update_evenimente->execute()) {
+                        echo "Evenimentul actualizat cu succes!";
+
+                        // Delete existing records in related tables
+                        $stmt_delete_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
+                        $stmt_delete_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
+                        $stmt_delete_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
+
+                        foreach ([$stmt_delete_speakeri, $stmt_delete_parteneri, $stmt_delete_sponsori] as $stmt3) {
+                            if ($stmt3) {
+                                $stmt3->bind_param("i", $id);
+                                $stmt3->execute();
+                                $stmt3->close();
+                            } else {
+                                echo "Error in prepared statement (delete): " . $mysqli->error;
+                            }
+                        }
+
+                        // Insert new records in related tables
+                        $stmt_insert_speakeri = $mysqli->prepare("INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)");
+                        $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
+                        $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
+
+                        foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt3) {
+                            if ($stmt3) {
+                                $stmt3->bind_param("ii", $id, $value);
+
+                                switch ($stmt3) {
+                                    case $stmt_insert_speakeri:
+                                        $values = $speakeri;
+                                        break;
+                                    case $stmt_insert_parteneri:
+                                        $values = $parteneri;
+                                        break;
+                                    case $stmt_insert_sponsori:
+                                        $values = $sponsori;
+                                        break;
+                                    default:
+                                        break;
+                                }
+
+                                foreach ($values as $value) {
+                                    $stmt3->bind_param("ii", $id, $value);
+                                    $stmt3->execute();
+                                }
+
+                                $stmt3->close();
+                            } else {
+                                echo "Error in prepared statement (insert): " . $mysqli->error;
+                            }
+                        }
+                    } else {
+                        echo "Eroare la actualizarea evenimentului: " . $stmt_update_evenimente->error;
+                    }
+
+                    // Close the statement
+                    $stmt_update_evenimente->close();
+                } else {
+                    echo "Eroare în prepared statement (update): " . $mysqli->error;
+                }
+
+// ...
+            }
+        }
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -116,31 +224,32 @@ if ($error != '') {
 
 <form action="edit.php" method="post">
     <div>
-        <?php if ($_GET['id'] != '') { ?>
-        <input type="hidden" name="id" value="<?php echo $_GET['id'];?>" />
+        <?php
+        if (!empty($_GET['id'])) { ?>
+        <input type="hidden" name="id" value="<?php echo $_GET['id'];?>"/>
 
         <p>ID:
             <?php echo $_GET['id'];
             if ($result = $mysqli->query("SELECT
-    e.ID,
-    e.Titlu,
-    e.Descriere,
-    e.Data,
-    e.Ora,
-    e.Locatia,
-    e.Pret,
-    e.Contact,
-    GROUP_CONCAT(DISTINCT s.Nume SEPARATOR ', ') AS speaker_names,
-    GROUP_CONCAT(DISTINCT p.Nume SEPARATOR ', ') AS partener_names,
-    GROUP_CONCAT(DISTINCT sp.Nume SEPARATOR ', ') AS sponsor_names
-    FROM evenimente e
-    LEFT JOIN eveniment_speakeri es ON e.ID = es.Eveniment_ID
-    LEFT JOIN speakeri s ON es.Speakeri_ID = s.ID
-    LEFT JOIN eveniment_parteneri ep ON e.ID = ep.Eveniment_ID
-    LEFT JOIN parteneri p ON ep.Parteneri_ID = p.ID
-    LEFT JOIN eveniment_sponsori esp ON e.ID = esp.Eveniment_ID
-    LEFT JOIN sponsori sp ON esp.Sponsori_ID = sp.ID
-    WHERE e.ID= '" . $_GET['id'] . "'"))
+                e.ID,
+                e.Titlu,
+                e.Descriere,
+                e.Data,
+                e.Ora,
+                e.Locatia,
+                e.Pret,
+                e.Contact,
+                GROUP_CONCAT(DISTINCT s.Nume) AS speaker_names,
+                GROUP_CONCAT(DISTINCT p.Nume) AS partener_names,
+                GROUP_CONCAT(DISTINCT sp.Nume) AS sponsor_names
+                FROM evenimente e
+                LEFT JOIN eveniment_speakeri es ON e.ID = es.Eveniment_ID
+                LEFT JOIN speakeri s ON es.Speakeri_ID = s.ID
+                LEFT JOIN eveniment_parteneri ep ON e.ID = ep.Eveniment_ID
+                LEFT JOIN parteneri p ON ep.Parteneri_ID = p.ID
+                LEFT JOIN eveniment_sponsori esp ON e.ID = esp.Eveniment_ID
+                LEFT JOIN sponsori sp ON esp.Sponsori_ID = sp.ID
+                WHERE e.ID= '" . $_GET['id'] . "'"))
             {
             if ($result->num_rows > 0)
             { $row = $result->fetch_object();?>
@@ -170,6 +279,7 @@ if ($error != '') {
         <div id="container-speakeri">
             <label for="speakeri"><strong>Speakeri: </strong></label>
             <?php
+            $event_id = isset($_GET['id']) ? $_GET['id'] : null;
             $speakeri_ids = array();
             $sql = "SELECT Speakeri_ID FROM eveniment_speakeri WHERE Eveniment_ID = ?";
             $stmt = $mysqli->prepare($sql);
@@ -183,16 +293,17 @@ if ($error != '') {
 
             $stmt->close();
 
-            foreach($speakeri_ids as $id) {
+            foreach ($speakeri_ids as $speaker_id) {
                 $sql = "SELECT Nume FROM speakeri WHERE ID = ?";
                 $stmt = $mysqli->prepare($sql);
-                $stmt->bind_param("i", $id);
+                $stmt->bind_param("i", $speaker_id);
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $speaker = $result->fetch_object();
                 $stmt->close();
                 ?>
-                <input type="text" name="speakeri[]" value="<?php echo $speaker->Nume;?>" />
+                <br>
+                <input type="text" name="speakeri[]" value="<?php echo $speaker ? $speaker->Nume : ''; ?>" />
             <?php } ?>
 
             <?php
@@ -203,160 +314,107 @@ if ($error != '') {
             $result = $stmt->get_result();
             $count = $result->fetch_object()->count;
             $stmt->close();
-
-            for ($i = 0; $i < (3 - $count); $i++) {
-                ?>
-                <br><br>
-                <input type="text" name="speakeri[]" value="" />
-            <?php } ?>
-            <br><br>
+            ?>
             <button id="addSpeakerBtn">Adaugă speaker</button>
             <button id="removeSpeakerBtn">Șterge speaker</button>
         </div>
         <br><br>
 
+
         <div id="container-parteneri">
-            <label for="parteneri"><strong>Parteneri: </strong></label> <input type="text" name="parteneri[]" id="parteneri" value=""/>
+            <label for="parteneri"><strong>Parteneri:</strong></label>
+            <?php
+            //$event_id = isset($_GET['id']) ? $_GET['id'] : null;
+            $parteneri_ids = array();
+            $sql = "SELECT Parteneri_ID FROM eveniment_parteneri WHERE Eveniment_ID = ?";
+            $stmt1 = $mysqli->prepare($sql);
+            $stmt1->bind_param("i", $event_id);
+            $stmt1->execute();
+            $result = $stmt1->get_result();
+
+            while ($row = $result->fetch_assoc()) {
+                $parteneri_ids[] = $row['Parteneri_ID'];
+            }
+
+            $stmt1->close();
+
+            foreach ($parteneri_ids as $partener_id) {
+                $sql = "SELECT Nume FROM parteneri WHERE ID = ?";
+                $stmt1 = $mysqli->prepare($sql);
+                $stmt1->bind_param("i", $partener_id);
+                $stmt1->execute();
+                $result = $stmt1->get_result();
+                $partener = $result->fetch_object();
+                $stmt1->close();
+                ?>
+                <br>
+                <input type="text" name="parteneri[]" value="<?php echo $partener ? $partener->Nume : ''; ?>" />
+            <?php } ?>
+
+            <?php
+            $sql = "SELECT COUNT(*) as count FROM eveniment_parteneri WHERE Eveniment_ID = ?";
+            $stmt1 = $mysqli->prepare($sql);
+            $stmt1->bind_param("i", $event_id);
+            $stmt1->execute();
+            $result = $stmt1->get_result();
+            $count = $result->fetch_object()->count;
+            $stmt1->close();
+            ?>
             <button id="addPartenerBtn">Adaugă partener</button>
             <button id="removePartenerBtn">Șterge partener</button>
         </div>
-        <br>
-        <br>
+        <br><br>
+
 
         <div id="container-sponsori">
-            <label for="sponsori"><strong>Sponsori: </strong></label> <input type="text" name="sponsori[]" id="sponsori" value=""/>
+            <label for="sponsori"><strong>Sponsori: </strong></label>
+            <?php
+            //$event_id = $_GET['id'];
+            $sponsori_ids = array();
+            $sql = "SELECT Sponsori_ID FROM eveniment_sponsori WHERE Eveniment_ID = ?";
+            $stmt2 = $mysqli->prepare($sql);
+            $stmt2->bind_param("i", $event_id);
+            $stmt2->execute();
+            $result = $stmt2->get_result();
+
+            while ($row = $result->fetch_assoc()) {
+                $sponsori_ids[] = $row['Sponsori_ID'];
+            }
+
+            $stmt2->close();
+
+            foreach ($sponsori_ids as $sponsor_id) {
+                $sql = "SELECT Nume FROM sponsori WHERE ID = ?";
+                $stmt2 = $mysqli->prepare($sql);
+                $stmt2->bind_param("i", $sponsor_id);
+                $stmt2->execute();
+                $result = $stmt2->get_result();
+                $sponsor = $result->fetch_object();
+                $stmt2->close();
+                ?>
+                 <br>
+                <input type="text" name="sponsori[]" value="<?php echo $sponsor ? $sponsor->Nume : ''; ?>" />
+            <?php } ?>
+
+            <?php
+            $sql = "SELECT COUNT(*) as count FROM eveniment_sponsori WHERE Eveniment_ID = ?";
+            $stmt2 = $mysqli->prepare($sql);
+            $stmt2->bind_param("i", $id);
+            $stmt2->execute();
+            $result = $stmt2->get_result();
+            $count = $result->fetch_object()->count;
+            $stmt2->close();
+            ?>
             <button id="addSponsorBtn">Adaugă sponsor</button>
             <button id="removeSponsorBtn">Șterge sponsor</button>
         </div>
-        <br>
-        <br>
-        <br>
-        <input type="submit" name="submit" value="Adaugă eveniment" />
+        <br><br>
+
+
+        <input type="submit" name="submit" value="Salvează schimbările" />
         <a href="view.php">Catalog</a>
     </div>
 </form>
 </body>
 </html>
 
-
-<?php if (!empty($_POST['id'])) {
-    if (isset($_POST['submit'])) {
-        // preluam datele de pe formular
-        $titlu = htmlentities($_POST['titlu'], ENT_QUOTES);
-        $descriere_eveniment = htmlentities($_POST['descriere_eveniment'], ENT_QUOTES);
-        $data = htmlentities($_POST['data'], ENT_QUOTES);
-        $ora = htmlentities($_POST['ora'], ENT_QUOTES);
-        $locatia = htmlentities($_POST['locatia'], ENT_QUOTES);
-        $pret = strval($_POST['pret']);
-        $contact = htmlentities($_POST['contact'], ENT_QUOTES);
-        $speakeri = $_POST['speakeri'];
-        $parteneri = $_POST['parteneri'];
-        $sponsori = $_POST['sponsori'];
-
-        // verificam daca sunt completate
-        if (empty($titlu) || empty($descriere_eveniment) || empty($data) || empty($ora) || empty($locatia) || empty($speakeri) || empty($parteneri) || empty($sponsori) || empty($pret) || empty($contact)) {
-            // Daca sunt goale se afiseaza un mesaj
-            $error = 'EROARE: Campuri goale!';
-        } else {
-            // Begin a transaction for atomicity
-            $mysqli->begin_transaction();
-
-            try {
-                // Update evenimente table
-                $stmt_update_evenimente = $mysqli->prepare("
-                    UPDATE evenimente
-                    SET
-                        Titlu = ?,
-                        Descriere = ?,
-                        Data = ?,
-                        Ora = ?,
-                        Locatia = ?,
-                        Pret = ?,
-                        Contact = ?
-                    WHERE
-                        ID = ?
-                ");
-
-                if ($stmt_update_evenimente) {
-                    // Bind parameters
-                    $stmt_update_evenimente->bind_param("ssssi", $titlu, $descriere_eveniment, $data, $locatia, $id);
-
-                    // Execute the update statement
-                    if ($stmt_update_evenimente->execute()) {
-                        // Update related tables
-                        // Assuming that the speaker, sponsor, and partner IDs are stored in the same field (e.g., comma-separated)
-                        $speaker_ids = explode(',', $speakeri);
-                        $parteneri_ids = explode(',', $parteneri);
-                        $sponsori_ids = explode(',', $sponsori);
-
-                        // Delete existing records in related tables
-                        $stmt_delete_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
-                        $stmt_delete_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
-                        $stmt_delete_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
-
-                        foreach ([$stmt_delete_speakeri, $stmt_delete_parteneri, $stmt_delete_sponsori] as $stmt) {
-                            if ($stmt) {
-                                $stmt->bind_param("i", $id);
-                                $stmt->execute();
-                                $stmt->close();
-                            } else {
-                                throw new Exception("Error in prepared statement: " . $mysqli->error);
-                            }
-                        }
-
-                        // Insert new records in related tables
-                        $stmt_insert_speakeri = $mysqli->prepare("INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)");
-                        $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
-                        $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
-
-                        foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt) {
-                            if ($stmt) {
-                                $stmt->bind_param("ii", $id, $value);
-
-                                switch ($stmt) {
-                                    case $stmt_insert_speakeri:
-                                        $values = $speaker_ids;
-                                        break;
-                                    case $stmt_insert_parteneri:
-                                        $values = $parteneri_ids;
-                                        break;
-                                    case $stmt_insert_sponsori:
-                                        $values = $sponsori_ids;
-                                        break;
-                                    default:
-                                        break;
-                                }
-
-                                foreach ($values as $value) {
-                                    $stmt->execute();
-                                }
-
-                                $stmt->close();
-                            } else {
-                                throw new Exception("Error in prepared statement: " . $mysqli->error);
-                            }
-                        }
-                        echo "Actualizare efectuată cu succes!";
-                    } else {
-                        echo "Eroare la actualizarea evenimentului: " . $stmt_update_evenimente->error;
-                    }
-
-                    // Close the statement
-                    $stmt_update_evenimente->close();
-                } else {
-                    throw new Exception("Eroare în prepared statement: " . $mysqli->error);
-                }
-
-                // Commit the transaction
-                $mysqli->commit();
-            } catch (Exception $e) {
-                // Rollback the transaction on error
-                $mysqli->rollback();
-                echo "Error: " . $e->getMessage();
-            }
-        }
-    } else {
-        echo "EROARE: Nu se poate executa actualizarea!";
-    }
-}
-?>
