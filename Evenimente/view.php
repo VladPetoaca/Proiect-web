@@ -46,8 +46,8 @@ if ($result = $mysqli->query("SELECT
             echo "<td>" . $row->ID . "</td>";
             echo "<td>" . $row->Titlu . "</td>";
             echo "<td>" . $row->Descriere . "</td>";
-            echo "<td>" . $row->Data . "</td>";
-            echo "<td>" . $row->Ora . "</td>";
+            echo "<td>" . date('d.m.Y', strtotime($row->Data)) . "</td>";
+            echo "<td>" . date('H:i', strtotime($row->Ora)) . "</td>";
             echo "<td>" . $row->Locatia . "</td>";
             echo "<td>" . $row->Pret . "</td>";
 

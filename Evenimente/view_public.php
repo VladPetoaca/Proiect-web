@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC>
+<!DOCTYPE HTML>
 <html lang="en">
 <head>
     <title>Vizualizare evenimente</title>
@@ -16,10 +16,13 @@ if ($result = $mysqli->query("SELECT
     e.Titlu,
     e.Descriere,
     e.Data,
+    e.Ora,
     e.Locatia,
-    s.Nume AS speaker_name,
-    p.Nume AS partener_name,
-    sp.Nume AS sponsor_name
+    e.Pret,
+    e.Contact,
+    GROUP_CONCAT(DISTINCT s.Nume SEPARATOR ', ') AS speaker_names,
+    GROUP_CONCAT(DISTINCT p.Nume SEPARATOR ', ') AS partener_names,
+    GROUP_CONCAT(DISTINCT sp.Nume SEPARATOR ', ') AS sponsor_names
     FROM evenimente e
     LEFT JOIN eveniment_speakeri es ON e.ID = es.Eveniment_ID
     LEFT JOIN speakeri s ON es.Speakeri_ID = s.ID
@@ -27,27 +30,32 @@ if ($result = $mysqli->query("SELECT
     LEFT JOIN parteneri p ON ep.Parteneri_ID = p.ID
     LEFT JOIN eveniment_sponsori esp ON e.ID = esp.Eveniment_ID
     LEFT JOIN sponsori sp ON esp.Sponsori_ID = sp.ID
+    GROUP BY e.ID
     ORDER BY e.ID"))
 {
     if ($result->num_rows > 0)
     {
         echo "<table border=1 cellpadding=10>";
-        echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Locatia</th><th>Speaker</th><th>Partener</th><th>Sponsor</th><th>Detalii</th>
-<th>Bilete</th></tr>";
+        echo "<tr><th>Titlu</th><th>Descriere</th><th>Data</th><th>Ora</th><th>Locația</th>
+                <th>Preț</th><th>Speakeri</th><th>Parteneri</th><th>Sponsori</th><th>Contact</th><th>Detalii</th><th>Bilete</th></tr>";
 
         while ($row = $result->fetch_object())
         {
             echo "<tr>";
-            echo "<td>" . $row->ID . "</td>";
             echo "<td>" . $row->Titlu . "</td>";
             echo "<td>" . $row->Descriere . "</td>";
-            echo "<td>" . $row->Data . "</td>";
+            echo "<td>" . date('d.m.Y', strtotime($row->Data)) . "</td>";
+            echo "<td>" . date('H:i', strtotime($row->Ora)) . "</td>";
             echo "<td>" . $row->Locatia . "</td>";
-            echo "<td>" . $row->speaker_name . "</td>";
-            echo "<td>" . $row->partener_name . "</td>";
-            echo "<td>" . $row->sponsor_name . "</td>";
+            echo "<td>" . $row->Pret . "</td>";
+
+            echo "<td>" . $row->speaker_names . "</td>";
+            echo "<td>" . $row->partener_names . "</td>";
+            echo "<td>" . $row->sponsor_names . "</td>";
+
+            echo "<td>" . $row->Contact . "</td>";
             echo "<td><a href='./event_pages/event_" . $row->ID . ".html'>Detalii</a></td>";
-            echo "<td><a href='../../Proiect-web/Evenimente/user_login.html'>Adauga in cos</a></td>";
+            echo "<td><a>Cumpără bilet</a></td>";
             echo "</tr>";
         }
 
@@ -55,7 +63,7 @@ if ($result = $mysqli->query("SELECT
     }
     else
     {
-        echo "Nu sunt evenimente in tabela!";
+        echo "Nu sunt evenimente în baza de date!";
     }
 }
 else
@@ -66,8 +74,6 @@ else
 $mysqli->close();
 ?>
 <br>
-<br>
 <h2><a href="user_home.php">Acasă</a></h2>
 </body>
 </html>
-
