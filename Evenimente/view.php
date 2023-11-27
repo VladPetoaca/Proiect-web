@@ -16,10 +16,13 @@ if ($result = $mysqli->query("SELECT
     e.Titlu,
     e.Descriere,
     e.Data,
+    e.Ora,
     e.Locatia,
-    s.Nume AS speaker_name,
-    p.Nume AS partener_name,
-    sp.Nume AS sponsor_name
+    e.Pret,
+    e.Contact,
+    GROUP_CONCAT(DISTINCT s.Nume SEPARATOR ', ') AS speaker_names,
+    GROUP_CONCAT(DISTINCT p.Nume SEPARATOR ', ') AS partener_names,
+    GROUP_CONCAT(DISTINCT sp.Nume SEPARATOR ', ') AS sponsor_names
     FROM evenimente e
     LEFT JOIN eveniment_speakeri es ON e.ID = es.Eveniment_ID
     LEFT JOIN speakeri s ON es.Speakeri_ID = s.ID
@@ -27,12 +30,15 @@ if ($result = $mysqli->query("SELECT
     LEFT JOIN parteneri p ON ep.Parteneri_ID = p.ID
     LEFT JOIN eveniment_sponsori esp ON e.ID = esp.Eveniment_ID
     LEFT JOIN sponsori sp ON esp.Sponsori_ID = sp.ID
+    GROUP BY e.ID
     ORDER BY e.ID"))
 {
     if ($result->num_rows > 0)
     {
         echo "<table border=1 cellpadding=10>";
-        echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Locatia</th><th>Speaker</th><th>Partener</th><th>Sponsor</th><th>Detalii</th></tr>";
+        echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Ora</th><th>Locația</th>
+                <th>Preț</th><th>Speakeri</th><th>Parteneri</th><th>Sponsori</th><th>Contact</th><th>Detalii</th>
+                <th colspan='2'>Modifică/șterge</th></tr>";
 
         while ($row = $result->fetch_object())
         {
@@ -41,13 +47,18 @@ if ($result = $mysqli->query("SELECT
             echo "<td>" . $row->Titlu . "</td>";
             echo "<td>" . $row->Descriere . "</td>";
             echo "<td>" . $row->Data . "</td>";
+            echo "<td>" . $row->Ora . "</td>";
             echo "<td>" . $row->Locatia . "</td>";
-            echo "<td>" . $row->speaker_name . "</td>";
-            echo "<td>" . $row->partener_name . "</td>";
-            echo "<td>" . $row->sponsor_name . "</td>";
-            echo "<td><a href='edit.php?id=" . $row->ID . "'>Modificare</a></td>";
-            echo "<td><a href='delete.php?id=" . $row->ID . "'>Stergere</a></td>";
+            echo "<td>" . $row->Pret . "</td>";
+
+            echo "<td>" . $row->speaker_names . "</td>";
+            echo "<td>" . $row->partener_names . "</td>";
+            echo "<td>" . $row->sponsor_names . "</td>";
+
+            echo "<td>" . $row->Contact . "</td>";
             echo "<td><a href='./event_pages/event_" . $row->ID . ".html'>Detalii</a></td>";
+            echo "<td><a href='edit.php?id=" . $row->ID . "'>Modifică</a></td>";
+            echo "<td><a href='delete.php?id=" . $row->ID . "'>Șterge</a></td>";
             echo "</tr>";
         }
 
