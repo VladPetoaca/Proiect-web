@@ -28,7 +28,6 @@ if (isset($_GET['id'])) {
                 echo '<p><strong>Data:</strong> ' . date('d.m.Y', strtotime($row->Data)) . '</p>';
                 echo '<p><strong>Ora: </strong>' . date('H:i', strtotime($row->Ora)) . '</p>';
                 echo '<p><strong>Locația: </strong>' . $row->Locatia . '</p>';
-                echo '<p><strong>Contact:</strong> ' . $row->Contact . '</p>';
                 echo '<p><strong>Prețul biletului:</strong> ' . $row->Pret . ' RON</p>';
                 echo '<p><i>' . $row->Descriere . '</i></p>';
                 /*echo '<form method="post" action="cos.php?action=add&eventId=' . $eventId . '">';
@@ -40,7 +39,8 @@ if (isset($_GET['id'])) {
             }
             echo '<a href="agenda.php?id=' . $eventId . '">Agenda</a><br>';
         echo '<a href="speaker_details.php?id=' . $eventId . '">Speakeri</a><br>';
-        echo '<a href="sponsor_details.php?id=' . $eventId . '">Sponsori & Parteneri</a><br><br><br><br>';
+        echo '<a href="sponsor_details.php?id=' . $eventId . '">Sponsori & Parteneri</a><br>';
+            echo '<a href="contact.php?id=' . $eventId . '">Contact</a><br><br><br><br>';
             echo '<a href="tickets.php?id=' . $eventId . '">Cumpără bilet</a>';
             $mysqli->close();
             }
