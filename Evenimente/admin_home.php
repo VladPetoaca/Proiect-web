@@ -37,7 +37,7 @@ if (!isset($_SESSION['loggedin'])) {
     <li><a href="speaker_add.php">Adaugă un speaker nou</a></li>
     <li><a href="partener_add.php">Adaugă un partener nou</a></li>
     <li><a href="sponsor_add.php">Adaugă un sponsor nou</a></li>
-    <li><a href="send_invitations.php">Trimite invitații la evenimente</a></li>
+    <li><a href="send_mail.php">Trimite invitații la evenimente</a></li>
     <li><a href="view.php"</a>Vizualizează catalogul de evenimente</li>
 </ul>
 </body>

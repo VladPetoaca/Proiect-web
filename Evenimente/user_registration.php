@@ -71,7 +71,7 @@
 
 
 <?php
-include ('config.php');
+include('config.php');
 
 if (mysqli_connect_errno()) {
 
