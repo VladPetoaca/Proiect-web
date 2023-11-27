@@ -21,13 +21,13 @@ if (isset($_POST['submit'])) {
         if ($stmt = $mysqli->prepare($sql)) {
             $stmt->bind_param("ssss", $nume, $email, $telefon, $adresa);
             $stmt->execute();
-                echo "Speaker-ul a fost adăugat cu succes!";
-            } else {
-                echo "Nu s-a putut adăuga speaker-ul.";
-            }
-                $stmt->close();
-            echo "ERROR: " . $mysqli->error;
+            echo "Sponsorul-ul a fost adăugat cu succes!";
+        } else {
+            echo "Nu s-a putut adăuga sponsorul.";
         }
+        $stmt->close();
+        echo "ERROR: " . $mysqli->error;
+    }
 }
 
 // Close the database connection
@@ -46,11 +46,11 @@ if ($error != '') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="crud.css">
-    <title>Adăugare Speaker</title>
+    <title>Adăugare Sponsor</title>
 </head>
 
 <body>
-<h1>Adăugare Speaker</h1>
+<h1>Adăugare Sponsor</h1>
 
 <?php
 if ($error != '') {
@@ -66,8 +66,8 @@ if ($error != '') {
         <label for="adresa"><strong>Adresa: </strong></label><input type="text" name="adresa" value=""/><br />
 
         <br />
-        <input type="submit" name="submit" value="Submit" />
-        <a href="speaker_view.php">Lista de speakeri</a>
+        <input type="submit" name="submit" value="Adaugă" />
+        <a href="sponsor_view.php">Lista de sponsori</a>
     </div>
 </form>
 </body>
