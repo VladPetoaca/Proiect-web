@@ -37,7 +37,7 @@ if ($result = $mysqli->query("SELECT
     {
         echo "<table border=1 cellpadding=10>";
         echo "<tr><th>ID</th><th>Titlu</th><th>Descriere</th><th>Data</th><th>Ora</th><th>Locația</th>
-                <th>Preț</th><th>Speakeri</th><th>Parteneri</th><th>Sponsori</th><th>Contact</th><th>Detalii</th>
+                <th>Preț</th><th>Speakeri</th><th>Parteneri</th><th>Sponsori</th><th>Contact</th>
                 <th colspan='2'>Modifică/șterge</th></tr>";
 
         while ($row = $result->fetch_object())
@@ -56,7 +56,6 @@ if ($result = $mysqli->query("SELECT
             echo "<td>" . $row->sponsor_names . "</td>";
 
             echo "<td>" . $row->Contact . "</td>";
-            echo "<td><a href='./event_pages/event_" . $row->ID . ".html'>Detalii</a></td>";
             echo "<td><a href='edit.php?id=" . $row->ID . "'>Modifică</a></td>";
             echo "<td><a href='delete.php?id=" . $row->ID . "'>Șterge</a></td>";
             echo "</tr>";

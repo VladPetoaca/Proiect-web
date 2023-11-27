@@ -54,7 +54,7 @@ if ($result = $mysqli->query("SELECT
             echo "<td>" . $row->sponsor_names . "</td>";
 
             echo "<td>" . $row->Contact . "</td>";
-            echo "<td><a href='./event_pages/event_" . $row->ID . ".html'>Detalii</a></td>";
+            echo "<td><a href='/Proiect-web/pagini/eveniment_details.php?id=" . $row->ID . "'>Detalii</a></td>";
             echo "<td><a>Cumpără bilet</a></td>";
             echo "</tr>";
         }
