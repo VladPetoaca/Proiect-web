@@ -41,7 +41,6 @@ if (isset($_GET['id'])) {
         echo '<a href="speaker_details.php?id=' . $eventId . '">Speakeri</a><br>';
         echo '<a href="sponsor_details.php?id=' . $eventId . '">Sponsori & Parteneri</a><br>';
             echo '<a href="contact.php?id=' . $eventId . '">Contact</a><br><br><br><br>';
-            echo '<a href="tickets.php?id=' . $eventId . '">Cumpără bilet</a>';
             $mysqli->close();
             }
         ?>
