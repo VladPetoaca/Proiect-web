@@ -1,17 +1,17 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html lang="en">
 <head>
-    <title>Lista de speakeri</title>
+    <title>Lista de parteneri</title>
     <link rel="stylesheet" href="crud.css">
 </head>
 <body>
-<h1>Lista de speakeri</h1>
+<h1>Lista de parteneri</h1>
 
 <?php
 
 include('config.php');
 
-if ($result = $mysqli->query("SELECT * FROM speakeri ORDER BY ID"))
+if ($result = $mysqli->query("SELECT * FROM parteneri ORDER BY ID"))
 {
     if ($result->num_rows > 0)
     {
@@ -27,15 +27,15 @@ if ($result = $mysqli->query("SELECT * FROM speakeri ORDER BY ID"))
             echo "<td>" . $row->Email . "</td>";
             echo "<td>" . $row->Telefon . "</td>";
             echo "<td>" . $row->Adresa . "</td>";
-            echo "<td><a href='speaker_edit.php?id=" . $row->ID . "'>Modifică</a></td>";
-            echo "<td><a href='speaker_delete.php?id=" .$row->ID . "'>Șterge</a></td>";
+            echo "<td><a href='partener_edit.php?id=" . $row->ID . "'>Modifică</a></td>";
+            echo "<td><a href='partener_delete.php?id=" .$row->ID . "'>Șterge</a></td>";
             echo "</tr>";
         }
         echo "</table>";
     }
     else
     {
-        echo "Nu sunt speakeri în baza de date!";
+        echo "Nu sunt parteneri în baza de date!";
     }
 }
 
@@ -45,8 +45,9 @@ else
 $mysqli->close();
 ?>
 <br>
-<a href="speaker_add.php">Adaugă un speaker nou</a>
+<a href="partener_add.php">Adaugă un partener nou</a>
 <br>
 <a href="admin_home.php">Panou de control</a>
 </body>
 </html>
+
