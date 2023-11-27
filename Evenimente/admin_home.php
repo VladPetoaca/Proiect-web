@@ -34,6 +34,9 @@ if (!isset($_SESSION['loggedin'])) {
 <h1>Control Panel</h1>
 <ul>
     <li><a href="add.php">Adaugă un eveniment nou</a></li>
+    <li><a href="speaker_add.php">Adaugă un speaker nou</a></li>
+    <li><a href="partener_add.php">Adaugă un partener nou</a></li>
+    <li><a href="sponsor_add.php">Adaugă un sponsor nou</a></li>
     <li><a href="send_invitations.php">Trimite invitații la evenimente</a></li>
     <li><a href="view.php"</a>Vizualizează catalogul de evenimente</li>
 </ul>
