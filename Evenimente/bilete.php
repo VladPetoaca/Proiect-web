@@ -51,12 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_cart'])) {
 
 <?php
 // Exemplu de eveniment
-$eventID = 1;
-$eventPrice = 50.00;
 ?>
 
 <div>
-    <p>Preț: <?php echo $eventPrice; ?> RON</p>
 
     <form method="post" action="">
         <input type="hidden" name="event_id" value="<?php echo $eventID; ?>">
@@ -79,7 +76,7 @@ if (!empty($cartItems)) {
         $quantity = $cartItem['quantity'];
 
         // Afiseaza detaliile din coș
-        echo "<p>Eveniment ID: $eventID, Cantitate: $quantity</p>";
+        echo "<p> Cantitate: $quantity</p>";
 
         // Formular pentru eliminare din coș
         echo "<form method='post' action=''>
