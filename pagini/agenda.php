@@ -50,18 +50,12 @@ if (isset($_GET['id'])) {
 <body>
 
 <h1><?php echo $titlu; ?></h1>
-<p><?php echo $descriere; ?></p>
+<p><i><?php echo $descriere; ?></i></p>
 <p>Data: <?php echo $data; ?></p>
 <p>Locația: <?php echo $locatia; ?></p>
 
 <h2>Agenda:</h2>
 <ul>
-    <?php
-    while ($row_agenda = $result_agenda->fetch_assoc()) {
-        echo "<li>{$row_agenda['data']} - {$row_agenda['descriere']}</li>";
-    }
-    ?>
-
     <h3>Vorbitori:</h3>
     <ul>
         <?php
