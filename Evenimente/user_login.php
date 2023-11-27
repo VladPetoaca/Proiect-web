@@ -60,7 +60,7 @@ if ($stmt = $mysqli->prepare('SELECT id, parola FROM inregistrare WHERE username
             $_SESSION['name'] = $_POST['username'];
             $_SESSION['id'] = $id;
             echo 'Bine ati venit' . $_SESSION['name'] . '!';
-            header('Location: admin_home.php');
+            header('Location: user_home.php');
         } else {
             echo 'Nume de utilizator sau parolă incorectă!';
         }

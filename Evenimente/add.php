@@ -167,6 +167,8 @@ $error = '';
 <?php
 function getOrCreateID($tableName, $columnName, $value)
 {
+    global $mysqli;
+
     $sql = "SELECT ID FROM $tableName WHERE $columnName = ?";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("s", $value);
@@ -196,6 +198,8 @@ function getOrCreateID($tableName, $columnName, $value)
 
 function insertIntoEventSpeakerTable($eveniment_id, $speaker_id)
 {
+    global $mysqli;
+
     $sql = "INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("ii", $eveniment_id, $speaker_id);
@@ -205,6 +209,8 @@ function insertIntoEventSpeakerTable($eveniment_id, $speaker_id)
 
 function insertIntoEventPartenerTable($eveniment_id, $partener_id)
 {
+    global $mysqli;
+
     $sql = "INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("ii", $eveniment_id, $partener_id);
@@ -214,6 +220,8 @@ function insertIntoEventPartenerTable($eveniment_id, $partener_id)
 
 function insertIntoEventSponsorTable($eveniment_id, $sponsor_id)
 {
+    global $mysqli;
+
     $sql = "INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)";
     $stmt = $mysqli->prepare($sql);
     $stmt->bind_param("ii", $eveniment_id, $sponsor_id);
@@ -276,8 +284,6 @@ if (isset($_POST['submit'])) {
                 $sponsor_id = getOrCreateID('sponsori', 'Nume', $sponsor);
                 insertIntoEventSponsorTable($eveniment_id, $sponsor_id);
             }
-
-
 
             echo "Evenimentul a fost adăugat cu succes!";
         } else {
