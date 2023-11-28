@@ -2,6 +2,32 @@
 include("config.php");
 $error = '';
 
+// Helper function to get the table name based on the statement type
+function getTableName($stmt)
+{
+    $tableNames = [
+        'eveniment_speakeri' => "eveniment_speakeri",
+        'eveniment_parteneri' => "eveniment_parteneri",
+        'eveniment_sponsori' => "eveniment_sponsori",
+    ];
+
+    $stmtName = str_replace('_', '', $stmt->result_metadata()->fetch_field()->name);
+    return $tableNames[$stmtName];
+}
+
+// Helper function to get the column name based on the statement type
+function getColumn($stmt)
+{
+    $columns = [
+        'eveniment_speakeri' => "Speakeri_ID",
+        'eveniment_parteneri' => "Parteneri_ID",
+        'eveniment_sponsori' => "Sponsori_ID",
+    ];
+
+    $stmtName = str_replace('_', '', $stmt->result_metadata()->fetch_field()->name);
+    return $columns[$stmtName];
+}
+
 if (!empty($_POST['id'])) {
     if (isset($_POST['submit'])) {
         if (is_numeric($_POST['id'])) {
@@ -41,18 +67,6 @@ if (!empty($_POST['id'])) {
                     // Execute the update statement
                     if ($stmt_update_evenimente->execute()) {
                         echo "Evenimentul actualizat cu succes!";
-
-                        // Function to insert if not exists
-                        /*function insertIfNotExists($table, $name) {
-                            global $mysqli;
-
-                            $stmt = $mysqli->prepare("INSERT INTO $table (Nume) VALUES (?)");
-                            $stmt->bind_param("s", $name);
-                            $stmt->execute();
-                            $stmt->close();
-
-                            return $mysqli->insert_id;
-                        }*/
 
                         // Insert or update speakeri
                         $speakeri_ids = array();
@@ -110,7 +124,6 @@ if (!empty($_POST['id'])) {
                             $stmt_check_partener->close();
                         }
 
-
                         // Insert or update sponsors
                         $sponsori_ids = array();
                         foreach ($sponsori as $sponsor_name) {
@@ -139,104 +152,166 @@ if (!empty($_POST['id'])) {
                             $stmt_check_sponsor->close();
                         }
 
-                        // Check if IDs are changed for speakeri, parteneri, and sponsori
-                        $speakeriChanged = !empty(array_diff($speakeri_ids, $_POST['speakeri']));
-                        $parteneriChanged = !empty(array_diff($parteneri_ids, $_POST['parteneri']));
-                        $sponsoriChanged = !empty(array_diff($sponsori_ids, $_POST['sponsori']));
+                        // Update speakeri, parteneri, and sponsori associations
+                        $stmt_update_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
+                        $stmt_update_speakeri->bind_param("i", $id);
+                        $stmt_update_speakeri->execute();
+                        $stmt_update_speakeri->close();
 
-                        // Delete existing records in related tables only if IDs are changed
-                        if ($speakeriChanged || $parteneriChanged || $sponsoriChanged) {
-                            $stmt_delete_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
-                            $stmt_delete_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
-                            $stmt_delete_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
+                        $stmt_update_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
+                        $stmt_update_parteneri->bind_param("i", $id);
+                        $stmt_update_parteneri->execute();
+                        $stmt_update_parteneri->close();
 
-                            foreach ([$stmt_delete_speakeri, $stmt_delete_parteneri, $stmt_delete_sponsori] as $stmt3) {
-                                if ($stmt3) {
-                                    $stmt3->bind_param("i", $id);
-                                    $stmt3->execute();
-                                    $stmt3->close();
-                                } else {
-                                    echo "Error in prepared statement (delete): " . $mysqli->error;
-                                }
-                            }
+                        $stmt_update_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
+                        $stmt_update_sponsori->bind_param("i", $id);
+                        $stmt_update_sponsori->execute();
+                        $stmt_update_sponsori->close();
 
-                            // Insert new records in related tables
+                        foreach ($speakeri_ids as $speaker_id) {
                             $stmt_insert_speakeri = $mysqli->prepare("INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)");
-                            $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
-                            $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
-
-                            foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt3) {
-                                if ($stmt3) {
-                                    switch ($stmt3) {
-                                        case $stmt_insert_speakeri:
-                                            $values = $speakeri;
-                                            break;
-                                        case $stmt_insert_parteneri:
-                                            $values = $parteneri;
-                                            break;
-                                        case $stmt_insert_sponsori:
-                                            $values = $sponsori;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-
-                                    foreach ($values as $value) {
-                                        // Check if the speaker/partner/sponsor already exists
-                                        $check_stmt = $mysqli->prepare("SELECT ID FROM speakeri WHERE Nume = ?");
-                                        $check_stmt->bind_param("s", $value);
-                                        $check_stmt->execute();
-                                        $check_result = $check_stmt->get_result();
-
-                                        if ($check_result->num_rows > 0) {
-                                            $row = $check_result->fetch_assoc();
-                                            $speaker_partner_sponsor_id = $row['ID'];
-
-                                            // Check if the relation already exists
-                                            $check_relation_stmt = $mysqli->prepare("SELECT ID FROM eveniment_speakeri WHERE Eveniment_ID = ? AND Speakeri_ID = ?");
-                                            $check_relation_stmt->bind_param("ii", $id, $speaker_partner_sponsor_id);
-                                            $check_relation_stmt->execute();
-                                            $check_relation_result = $check_relation_stmt->get_result();
-
-                                            if ($check_relation_result->num_rows === 0) {
-                                                // Insert the relation only if it doesn't exist
-                                                $stmt3->bind_param("ii", $id, $speaker_partner_sponsor_id);
-                                                $stmt3->execute();
-                                            }
-                                        } else {
-                                            // If the speaker/partner/sponsor doesn't exist, insert a new record
-                                            $insert_stmt = $mysqli->prepare("INSERT INTO speakeri (Nume) VALUES (?)");
-                                            $insert_stmt->bind_param("s", $value);
-                                            $insert_stmt->execute();
-                                            $speaker_partner_sponsor_id = $insert_stmt->insert_id;
-                                            $insert_stmt->close();
-
-                                            // Insert the relation
-                                            $stmt3->bind_param("ii", $id, $speaker_partner_sponsor_id);
-                                            $stmt3->execute();
-                                        }
-                                    }
-                                    $stmt3->close();
-                                } else {
-                                    echo "Error in prepared statement (insert): " . $mysqli->error;
-                                }
-                            }
-
-
+                            $stmt_insert_speakeri->bind_param("ii", $id, $speaker_id);
+                            $stmt_insert_speakeri->execute();
+                            $stmt_insert_speakeri->close();
                         }
-                    } else {
-                        echo "Eroare la actualizarea evenimentului: " . $stmt_update_evenimente->error;
-                    }
 
-                    // Close the statement
-                    $stmt_update_evenimente->close();
+                        foreach ($parteneri_ids as $partener_id) {
+                            $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
+                            $stmt_insert_parteneri->bind_param("ii", $id, $partener_id);
+                            $stmt_insert_parteneri->execute();
+                            $stmt_insert_parteneri->close();
+                        }
+
+                        foreach ($sponsori_ids as $sponsor_id) {
+                            $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
+                            $stmt_insert_sponsori->bind_param("ii", $id, $sponsor_id);
+                            $stmt_insert_sponsori->execute();
+                            $stmt_insert_sponsori->close();
+                        }
+
+                        echo "Detalii actualizate cu succes!";
+                    } else {
+                        $error = 'EROARE: Actualizare esuata!';
+                    }
                 } else {
-                    echo "Eroare în prepared statement (update): " . $mysqli->error;
+                    $error = 'EROARE: ' . $mysqli->error;
                 }
+
+                // Close the statement
+                $stmt_update_evenimente->close();
             }
+        } else {
+            $error = 'EROARE: ID invalid!';
         }
+    } else {
+        $error = 'EROARE: Cerere invalida!';
     }
 }
+
+// Fetch event details
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $id = $_GET['id'];
+
+    // Prepare the select statement
+    $stmt = $mysqli->prepare("SELECT * FROM evenimente WHERE ID = ?");
+
+    // Bind parameters
+    $stmt->bind_param("i", $id);
+
+    // Execute the statement
+    $stmt->execute();
+
+    // Get the result
+    $result = $stmt->get_result();
+
+    // Fetch data
+    $event = $result->fetch_assoc();
+
+    // Close the statement
+    $stmt->close();
+} else {
+    $error = 'EROARE: ID invalid!';
+}
+
+// Fetch existing speakeri IDs
+$speakeri_ids = array();
+$sql = "SELECT Speakeri_ID FROM eveniment_speakeri WHERE Eveniment_ID = ?";
+$stmt_speakeri = $mysqli->prepare($sql);
+$stmt_speakeri->bind_param("i", $id);
+$stmt_speakeri->execute();
+$result_speakeri = $stmt_speakeri->get_result();
+
+while ($row_speakeri = $result_speakeri->fetch_assoc()) {
+    $speakeri_ids[] = $row_speakeri['Speakeri_ID'];
+}
+
+$stmt_speakeri->close();
+
+// Fetch existing parteneri IDs
+$parteneri_ids = array();
+$sql = "SELECT Parteneri_ID FROM eveniment_parteneri WHERE Eveniment_ID = ?";
+$stmt_parteneri = $mysqli->prepare($sql);
+$stmt_parteneri->bind_param("i", $id);
+$stmt_parteneri->execute();
+$result_parteneri = $stmt_parteneri->get_result();
+
+while ($row_parteneri = $result_parteneri->fetch_assoc()) {
+    $parteneri_ids[] = $row_parteneri['Parteneri_ID'];
+}
+
+$stmt_parteneri->close();
+
+// Fetch existing sponsori IDs
+$sponsori_ids = array();
+$sql = "SELECT Sponsori_ID FROM eveniment_sponsori WHERE Eveniment_ID = ?";
+$stmt_sponsori = $mysqli->prepare($sql);
+$stmt_sponsori->bind_param("i", $id);
+$stmt_sponsori->execute();
+$result_sponsori = $stmt_sponsori->get_result();
+
+while ($row_sponsori = $result_sponsori->fetch_assoc()) {
+    $sponsori_ids[] = $row_sponsori['Sponsori_ID'];
+}
+
+$stmt_sponsori->close();
+
+// Fetch existing speakeri, parteneri, and sponsori names for display
+$speakeri_names = array();
+foreach ($speakeri_ids as $speaker_id) {
+    $sql_speaker = "SELECT Nume FROM speakeri WHERE ID = ?";
+    $stmt_speaker = $mysqli->prepare($sql_speaker);
+    $stmt_speaker->bind_param("i", $speaker_id);
+    $stmt_speaker->execute();
+    $result_speaker = $stmt_speaker->get_result();
+    $speaker = $result_speaker->fetch_object();
+    $speakeri_names[] = $speaker ? $speaker->Nume : '';
+    $stmt_speaker->close();
+}
+
+$parteneri_names = array();
+foreach ($parteneri_ids as $partener_id) {
+    $sql_partener = "SELECT Nume FROM parteneri WHERE ID = ?";
+    $stmt_partener = $mysqli->prepare($sql_partener);
+    $stmt_partener->bind_param("i", $partener_id);
+    $stmt_partener->execute();
+    $result_partener = $stmt_partener->get_result();
+    $partener = $result_partener->fetch_object();
+    $parteneri_names[] = $partener ? $partener->Nume : '';
+    $stmt_partener->close();
+}
+
+$sponsori_names = array();
+foreach ($sponsori_ids as $sponsor_id) {
+    $sql_sponsor = "SELECT Nume FROM sponsori WHERE ID = ?";
+    $stmt_sponsor = $mysqli->prepare($sql_sponsor);
+    $stmt_sponsor->bind_param("i", $sponsor_id);
+    $stmt_sponsor->execute();
+    $result_sponsor = $stmt_sponsor->get_result();
+    $sponsor = $result_sponsor->fetch_object();
+    $sponsori_names[] = $sponsor ? $sponsor->Nume : '';
+    $stmt_sponsor->close();
+}
+
 ?>
 
 <!DOCTYPE html>
