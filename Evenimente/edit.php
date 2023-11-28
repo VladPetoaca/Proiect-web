@@ -2,32 +2,6 @@
 include("config.php");
 $error = '';
 
-// Helper function to get the table name based on the statement type
-function getTableName($stmt)
-{
-    $tableNames = [
-        'eveniment_speakeri' => "eveniment_speakeri",
-        'eveniment_parteneri' => "eveniment_parteneri",
-        'eveniment_sponsori' => "eveniment_sponsori",
-    ];
-
-    $stmtName = str_replace('_', '', $stmt->result_metadata()->fetch_field()->name);
-    return $tableNames[$stmtName];
-}
-
-// Helper function to get the column name based on the statement type
-function getColumn($stmt)
-{
-    $columns = [
-        'eveniment_speakeri' => "Speakeri_ID",
-        'eveniment_parteneri' => "Parteneri_ID",
-        'eveniment_sponsori' => "Sponsori_ID",
-    ];
-
-    $stmtName = str_replace('_', '', $stmt->result_metadata()->fetch_field()->name);
-    return $columns[$stmtName];
-}
-
 if (!empty($_POST['id'])) {
     if (isset($_POST['submit'])) {
         if (is_numeric($_POST['id'])) {
@@ -191,7 +165,7 @@ if (!empty($_POST['id'])) {
 
                         echo "Detalii actualizate cu succes!";
                     } else {
-                        $error = 'EROARE: Actualizare esuata!';
+                        $error = 'EROARE: Actualizare eșuată!';
                     }
                 } else {
                     $error = 'EROARE: ' . $mysqli->error;
@@ -204,112 +178,8 @@ if (!empty($_POST['id'])) {
             $error = 'EROARE: ID invalid!';
         }
     } else {
-        $error = 'EROARE: Cerere invalida!';
+        $error = 'EROARE: Câmpuri goale!';
     }
-}
-
-// Fetch event details
-if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $id = $_GET['id'];
-
-    // Prepare the select statement
-    $stmt = $mysqli->prepare("SELECT * FROM evenimente WHERE ID = ?");
-
-    // Bind parameters
-    $stmt->bind_param("i", $id);
-
-    // Execute the statement
-    $stmt->execute();
-
-    // Get the result
-    $result = $stmt->get_result();
-
-    // Fetch data
-    $event = $result->fetch_assoc();
-
-    // Close the statement
-    $stmt->close();
-} else {
-    $error = 'EROARE: ID invalid!';
-}
-
-// Fetch existing speakeri IDs
-$speakeri_ids = array();
-$sql = "SELECT Speakeri_ID FROM eveniment_speakeri WHERE Eveniment_ID = ?";
-$stmt_speakeri = $mysqli->prepare($sql);
-$stmt_speakeri->bind_param("i", $id);
-$stmt_speakeri->execute();
-$result_speakeri = $stmt_speakeri->get_result();
-
-while ($row_speakeri = $result_speakeri->fetch_assoc()) {
-    $speakeri_ids[] = $row_speakeri['Speakeri_ID'];
-}
-
-$stmt_speakeri->close();
-
-// Fetch existing parteneri IDs
-$parteneri_ids = array();
-$sql = "SELECT Parteneri_ID FROM eveniment_parteneri WHERE Eveniment_ID = ?";
-$stmt_parteneri = $mysqli->prepare($sql);
-$stmt_parteneri->bind_param("i", $id);
-$stmt_parteneri->execute();
-$result_parteneri = $stmt_parteneri->get_result();
-
-while ($row_parteneri = $result_parteneri->fetch_assoc()) {
-    $parteneri_ids[] = $row_parteneri['Parteneri_ID'];
-}
-
-$stmt_parteneri->close();
-
-// Fetch existing sponsori IDs
-$sponsori_ids = array();
-$sql = "SELECT Sponsori_ID FROM eveniment_sponsori WHERE Eveniment_ID = ?";
-$stmt_sponsori = $mysqli->prepare($sql);
-$stmt_sponsori->bind_param("i", $id);
-$stmt_sponsori->execute();
-$result_sponsori = $stmt_sponsori->get_result();
-
-while ($row_sponsori = $result_sponsori->fetch_assoc()) {
-    $sponsori_ids[] = $row_sponsori['Sponsori_ID'];
-}
-
-$stmt_sponsori->close();
-
-// Fetch existing speakeri, parteneri, and sponsori names for display
-$speakeri_names = array();
-foreach ($speakeri_ids as $speaker_id) {
-    $sql_speaker = "SELECT Nume FROM speakeri WHERE ID = ?";
-    $stmt_speaker = $mysqli->prepare($sql_speaker);
-    $stmt_speaker->bind_param("i", $speaker_id);
-    $stmt_speaker->execute();
-    $result_speaker = $stmt_speaker->get_result();
-    $speaker = $result_speaker->fetch_object();
-    $speakeri_names[] = $speaker ? $speaker->Nume : '';
-    $stmt_speaker->close();
-}
-
-$parteneri_names = array();
-foreach ($parteneri_ids as $partener_id) {
-    $sql_partener = "SELECT Nume FROM parteneri WHERE ID = ?";
-    $stmt_partener = $mysqli->prepare($sql_partener);
-    $stmt_partener->bind_param("i", $partener_id);
-    $stmt_partener->execute();
-    $result_partener = $stmt_partener->get_result();
-    $partener = $result_partener->fetch_object();
-    $parteneri_names[] = $partener ? $partener->Nume : '';
-    $stmt_partener->close();
-}
-
-$sponsori_names = array();
-foreach ($sponsori_ids as $sponsor_id) {
-    $sql_sponsor = "SELECT Nume FROM sponsori WHERE ID = ?";
-    $stmt_sponsor = $mysqli->prepare($sql_sponsor);
-    $stmt_sponsor->bind_param("i", $sponsor_id);
-    $stmt_sponsor->execute();
-    $result_sponsor = $stmt_sponsor->get_result();
-    $sponsor = $result_sponsor->fetch_object();
-    $sponsori_names[] = $sponsor ? $sponsor->Nume : '';
-    $stmt_sponsor->close();
 }
 
 ?>
