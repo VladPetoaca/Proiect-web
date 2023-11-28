@@ -12,12 +12,12 @@ $eventResult = $mysqli->query($eventQuery);
 
 $event = $eventResult->fetch_assoc();
 
-// Extract event details
-$eventName = htmlspecialchars($event['Titlu']);
-$eventDate = $event['Data'];
-$eventTime = $event['Ora'];
+// Extract event details and format them
+$eventName = html_entity_decode($event['Titlu']);
+$eventDate = date('d.m.Y', strtotime($event['Data']));
+$eventTime = date('H:i', strtotime($event['Ora']));
 $eventLocation = $event['Locatia'];
-$eventDescription = $event['Descriere'];
+$eventDescription = html_entity_decode($event['Descriere']);
 
 // Retrieve email addresses for sponsors associated with the event
 $sponsoriEmails = [];
@@ -42,12 +42,10 @@ if ($parteneriResult->num_rows > 0) {
 }
 
 // Prepare email template with event-specific details
-$subject = "Invitație pentru evenimentul $eventName";
+$subject = "Invitație la evenimentul $eventName";
 $message = "
-Către [RecipientName]
-
 Bună ziua!
-Ne bucurăm să vă invităm la evenimentul $eventName, care va avea loc pe $eventDate la ora $eventTime la $eventLocation.
+Ne bucurăm să vă invităm la evenimentul $eventName, care va avea loc pe data de $eventDate la ora $eventTime la $eventLocation.
 
 $eventDescription
 
@@ -56,21 +54,19 @@ Echipa Evenimente.ro";
 
 // Send emails to sponsors
 foreach ($sponsoriEmails as $email) {
-    $personalizedMessage = str_replace("[Recipient Name]", $email, $message);
-    if(mail($email, $subject, $personalizedMessage, $headers)){
-        echo "Mail spre $email trimis cu succes!";
+    if(mail($email, $subject, $message, $headers)){
+        echo "Mail spre $email trimis cu succes!\n";
     } else {
-        echo "Mail spre $email nu a putut fi trimis";
+        echo "Mail spre $email nu a putut fi trimis\n";
     }
 }
 
 // Send emails to partners
 foreach ($parteneriEmails as $email) {
-    $personalizedMessage = str_replace("[Recipient Name]", $email, $message);
-    if(mail($email, $subject, $personalizedMessage, $headers)){
-        echo "Mail spre $email trimis cu succes!";
+    if(mail($email, $subject, $message, $headers)){
+        echo "Mail spre $email trimis cu succes!\n";
     } else {
-        echo "Mail spre $email nu a putut fi trimis";
+        echo "Mail spre $email nu a putut fi trimis\n";
     }
 }
 $mysqli->close();
