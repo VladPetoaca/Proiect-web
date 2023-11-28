@@ -24,9 +24,6 @@ if (!empty($_POST['id'])) {
                 $error = 'EROARE: Campuri goale!';
             } else {
                 // Update evenimente table
-                // ...
-
-// Update evenimente table
                 $stmt_update_evenimente = $mysqli->prepare("UPDATE evenimente
                     SET Titlu = ?,
                         Descriere = ?,
@@ -45,52 +42,92 @@ if (!empty($_POST['id'])) {
                     if ($stmt_update_evenimente->execute()) {
                         echo "Evenimentul actualizat cu succes!";
 
-                        // Delete existing records in related tables
-                        $stmt_delete_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
-                        $stmt_delete_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
-                        $stmt_delete_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
+                        // Function to insert if not exists
+                        function insertIfNotExists($table, $name) {
+                            global $mysqli;
 
-                        foreach ([$stmt_delete_speakeri, $stmt_delete_parteneri, $stmt_delete_sponsori] as $stmt3) {
-                            if ($stmt3) {
-                                $stmt3->bind_param("i", $id);
-                                $stmt3->execute();
-                                $stmt3->close();
-                            } else {
-                                echo "Error in prepared statement (delete): " . $mysqli->error;
-                            }
+                            $stmt = $mysqli->prepare("INSERT INTO $table (Nume) VALUES (?)");
+                            $stmt->bind_param("s", $name);
+                            $stmt->execute();
+                            $stmt->close();
+
+                            return $mysqli->insert_id;
                         }
 
-                        // Insert new records in related tables
-                        $stmt_insert_speakeri = $mysqli->prepare("INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)");
-                        $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
-                        $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
+                        // Insert or update speakeri
+                        $speakeri_ids = array();
+                        foreach ($speakeri as $speaker_name) {
+                            $speaker_id = insertIfNotExists("speakeri", $speaker_name);
+                            $speakeri_ids[] = $speaker_id;
+                        }
 
-                        foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt3) {
-                            if ($stmt3) {
-                                $stmt3->bind_param("ii", $id, $value);
+                        // Insert or update parteneri
+                        $parteneri_ids = array();
+                        foreach ($parteneri as $partener_name) {
+                            $partener_id = insertIfNotExists("parteneri", $partener_name);
+                            $parteneri_ids[] = $partener_id;
+                        }
 
-                                switch ($stmt3) {
-                                    case $stmt_insert_speakeri:
-                                        $values = $speakeri;
-                                        break;
-                                    case $stmt_insert_parteneri:
-                                        $values = $parteneri;
-                                        break;
-                                    case $stmt_insert_sponsori:
-                                        $values = $sponsori;
-                                        break;
-                                    default:
-                                        break;
-                                }
+                        // Insert or update sponsori
+                        $sponsori_ids = array();
+                        foreach ($sponsori as $sponsor_name) {
+                            $sponsor_id = insertIfNotExists("sponsori", $sponsor_name);
+                            $sponsori_ids[] = $sponsor_id;
+                        }
 
-                                foreach ($values as $value) {
-                                    $stmt3->bind_param("ii", $id, $value);
+                        // Check if IDs are changed for speakeri, parteneri, and sponsori
+                        $speakeriChanged = !empty(array_diff($speakeri_ids, $_POST['speakeri']));
+                        $parteneriChanged = !empty(array_diff($parteneri_ids, $_POST['parteneri']));
+                        $sponsoriChanged = !empty(array_diff($sponsori_ids, $_POST['sponsori']));
+
+                        // Delete existing records in related tables only if IDs are changed
+                        if ($speakeriChanged || $parteneriChanged || $sponsoriChanged) {
+                            $stmt_delete_speakeri = $mysqli->prepare("DELETE FROM eveniment_speakeri WHERE Eveniment_ID = ?");
+                            $stmt_delete_parteneri = $mysqli->prepare("DELETE FROM eveniment_parteneri WHERE Eveniment_ID = ?");
+                            $stmt_delete_sponsori = $mysqli->prepare("DELETE FROM eveniment_sponsori WHERE Eveniment_ID = ?");
+
+                            foreach ([$stmt_delete_speakeri, $stmt_delete_parteneri, $stmt_delete_sponsori] as $stmt3) {
+                                if ($stmt3) {
+                                    $stmt3->bind_param("i", $id);
                                     $stmt3->execute();
+                                    $stmt3->close();
+                                } else {
+                                    echo "Error in prepared statement (delete): " . $mysqli->error;
                                 }
+                            }
 
-                                $stmt3->close();
-                            } else {
-                                echo "Error in prepared statement (insert): " . $mysqli->error;
+                            // Insert new records in related tables
+                            $stmt_insert_speakeri = $mysqli->prepare("INSERT INTO eveniment_speakeri (Eveniment_ID, Speakeri_ID) VALUES (?, ?)");
+                            $stmt_insert_parteneri = $mysqli->prepare("INSERT INTO eveniment_parteneri (Eveniment_ID, Parteneri_ID) VALUES (?, ?)");
+                            $stmt_insert_sponsori = $mysqli->prepare("INSERT INTO eveniment_sponsori (Eveniment_ID, Sponsori_ID) VALUES (?, ?)");
+
+                            foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt3) {
+                                if ($stmt3) {
+                                    $stmt3->bind_param("ii", $id, $value);
+
+                                    switch ($stmt3) {
+                                        case $stmt_insert_speakeri:
+                                            $values = $speakeri_ids;
+                                            break;
+                                        case $stmt_insert_parteneri:
+                                            $values = $parteneri_ids;
+                                            break;
+                                        case $stmt_insert_sponsori:
+                                            $values = $sponsori_ids;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+
+                                    foreach ($values as $value) {
+                                        $stmt3->bind_param("ii", $id, $value);
+                                        $stmt3->execute();
+                                    }
+
+                                    $stmt3->close();
+                                } else {
+                                    echo "Error in prepared statement (insert): " . $mysqli->error;
+                                }
                             }
                         }
                     } else {
@@ -102,13 +139,10 @@ if (!empty($_POST['id'])) {
                 } else {
                     echo "Eroare în prepared statement (update): " . $mysqli->error;
                 }
-
-// ...
             }
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
