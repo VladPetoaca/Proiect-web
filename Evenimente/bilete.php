@@ -1,7 +1,7 @@
 <?php
 include('ShoppingCart.php');
 session_start();
-
+$eventID = $_GET['id'];
 // Inițializare coș de cumpărături
 if (!isset($_SESSION['shoppingCart'])) {
     $_SESSION['shoppingCart'] = new ShoppingCart();
