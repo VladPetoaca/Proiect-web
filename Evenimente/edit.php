@@ -43,7 +43,7 @@ if (!empty($_POST['id'])) {
                         echo "Evenimentul actualizat cu succes!";
 
                         // Function to insert if not exists
-                        function insertIfNotExists($table, $name) {
+                        /*function insertIfNotExists($table, $name) {
                             global $mysqli;
 
                             $stmt = $mysqli->prepare("INSERT INTO $table (Nume) VALUES (?)");
@@ -52,27 +52,91 @@ if (!empty($_POST['id'])) {
                             $stmt->close();
 
                             return $mysqli->insert_id;
-                        }
+                        }*/
 
                         // Insert or update speakeri
                         $speakeri_ids = array();
                         foreach ($speakeri as $speaker_name) {
-                            $speaker_id = insertIfNotExists("speakeri", $speaker_name);
+                            // Check if the speaker already exists in the database
+                            $stmt_check_speaker = $mysqli->prepare("SELECT ID FROM speakeri WHERE Nume = ?");
+                            $stmt_check_speaker->bind_param("s", $speaker_name);
+                            $stmt_check_speaker->execute();
+                            $result_check_speaker = $stmt_check_speaker->get_result();
+
+                            if ($result_check_speaker->num_rows > 0) {
+                                // If the speaker exists, retrieve its ID
+                                $row = $result_check_speaker->fetch_assoc();
+                                $speaker_id = $row['ID'];
+                            } else {
+                                // If the speaker doesn't exist, insert a new record
+                                $stmt_insert_speaker = $mysqli->prepare("INSERT INTO speakeri (Nume) VALUES (?)");
+                                $stmt_insert_speaker->bind_param("s", $speaker_name);
+                                $stmt_insert_speaker->execute();
+                                $speaker_id = $mysqli->insert_id;
+                                $stmt_insert_speaker->close();
+                            }
+
+                            // Add the speaker ID to the array
                             $speakeri_ids[] = $speaker_id;
+
+                            $stmt_check_speaker->close();
                         }
 
-                        // Insert or update parteneri
+                        // Insert or update partners
                         $parteneri_ids = array();
                         foreach ($parteneri as $partener_name) {
-                            $partener_id = insertIfNotExists("parteneri", $partener_name);
+                            // Check if the partner already exists in the database
+                            $stmt_check_partener = $mysqli->prepare("SELECT ID FROM parteneri WHERE Nume = ?");
+                            $stmt_check_partener->bind_param("s", $partener_name);
+                            $stmt_check_partener->execute();
+                            $result_check_partener = $stmt_check_partener->get_result();
+
+                            if ($result_check_partener->num_rows > 0) {
+                                // If the partner exists, retrieve its ID
+                                $row = $result_check_partener->fetch_assoc();
+                                $partener_id = $row['ID'];
+                            } else {
+                                // If the partner doesn't exist, insert a new record
+                                $stmt_insert_partener = $mysqli->prepare("INSERT INTO parteneri (Nume) VALUES (?)");
+                                $stmt_insert_partener->bind_param("s", $partener_name);
+                                $stmt_insert_partener->execute();
+                                $partener_id = $mysqli->insert_id;
+                                $stmt_insert_partener->close();
+                            }
+
+                            // Add the partner ID to the array
                             $parteneri_ids[] = $partener_id;
+
+                            $stmt_check_partener->close();
                         }
 
-                        // Insert or update sponsori
+
+                        // Insert or update sponsors
                         $sponsori_ids = array();
                         foreach ($sponsori as $sponsor_name) {
-                            $sponsor_id = insertIfNotExists("sponsori", $sponsor_name);
+                            // Check if the sponsor already exists in the database
+                            $stmt_check_sponsor = $mysqli->prepare("SELECT ID FROM sponsori WHERE Nume = ?");
+                            $stmt_check_sponsor->bind_param("s", $sponsor_name);
+                            $stmt_check_sponsor->execute();
+                            $result_check_sponsor = $stmt_check_sponsor->get_result();
+
+                            if ($result_check_sponsor->num_rows > 0) {
+                                // If the sponsor exists, retrieve its ID
+                                $row = $result_check_sponsor->fetch_assoc();
+                                $sponsor_id = $row['ID'];
+                            } else {
+                                // If the sponsor doesn't exist, insert a new record
+                                $stmt_insert_sponsor = $mysqli->prepare("INSERT INTO sponsori (Nume) VALUES (?)");
+                                $stmt_insert_sponsor->bind_param("s", $sponsor_name);
+                                $stmt_insert_sponsor->execute();
+                                $sponsor_id = $mysqli->insert_id;
+                                $stmt_insert_sponsor->close();
+                            }
+
+                            // Add the sponsor ID to the array
                             $sponsori_ids[] = $sponsor_id;
+
+                            $stmt_check_sponsor->close();
                         }
 
                         // Check if IDs are changed for speakeri, parteneri, and sponsori
@@ -103,32 +167,62 @@ if (!empty($_POST['id'])) {
 
                             foreach ([$stmt_insert_speakeri, $stmt_insert_parteneri, $stmt_insert_sponsori] as $stmt3) {
                                 if ($stmt3) {
-                                    $stmt3->bind_param("ii", $id, $value);
-
                                     switch ($stmt3) {
                                         case $stmt_insert_speakeri:
-                                            $values = $speakeri_ids;
+                                            $values = $speakeri;
                                             break;
                                         case $stmt_insert_parteneri:
-                                            $values = $parteneri_ids;
+                                            $values = $parteneri;
                                             break;
                                         case $stmt_insert_sponsori:
-                                            $values = $sponsori_ids;
+                                            $values = $sponsori;
                                             break;
                                         default:
                                             break;
                                     }
 
                                     foreach ($values as $value) {
-                                        $stmt3->bind_param("ii", $id, $value);
-                                        $stmt3->execute();
-                                    }
+                                        // Check if the speaker/partner/sponsor already exists
+                                        $check_stmt = $mysqli->prepare("SELECT ID FROM speakeri WHERE Nume = ?");
+                                        $check_stmt->bind_param("s", $value);
+                                        $check_stmt->execute();
+                                        $check_result = $check_stmt->get_result();
 
+                                        if ($check_result->num_rows > 0) {
+                                            $row = $check_result->fetch_assoc();
+                                            $speaker_partner_sponsor_id = $row['ID'];
+
+                                            // Check if the relation already exists
+                                            $check_relation_stmt = $mysqli->prepare("SELECT ID FROM eveniment_speakeri WHERE Eveniment_ID = ? AND Speakeri_ID = ?");
+                                            $check_relation_stmt->bind_param("ii", $id, $speaker_partner_sponsor_id);
+                                            $check_relation_stmt->execute();
+                                            $check_relation_result = $check_relation_stmt->get_result();
+
+                                            if ($check_relation_result->num_rows === 0) {
+                                                // Insert the relation only if it doesn't exist
+                                                $stmt3->bind_param("ii", $id, $speaker_partner_sponsor_id);
+                                                $stmt3->execute();
+                                            }
+                                        } else {
+                                            // If the speaker/partner/sponsor doesn't exist, insert a new record
+                                            $insert_stmt = $mysqli->prepare("INSERT INTO speakeri (Nume) VALUES (?)");
+                                            $insert_stmt->bind_param("s", $value);
+                                            $insert_stmt->execute();
+                                            $speaker_partner_sponsor_id = $insert_stmt->insert_id;
+                                            $insert_stmt->close();
+
+                                            // Insert the relation
+                                            $stmt3->bind_param("ii", $id, $speaker_partner_sponsor_id);
+                                            $stmt3->execute();
+                                        }
+                                    }
                                     $stmt3->close();
                                 } else {
                                     echo "Error in prepared statement (insert): " . $mysqli->error;
                                 }
                             }
+
+
                         }
                     } else {
                         echo "Eroare la actualizarea evenimentului: " . $stmt_update_evenimente->error;
@@ -292,7 +386,7 @@ if ($error != '') {
         <label for="titlu"><strong>Titlu: </strong></label> <input type="text" name="titlu" value="<?php echo$row->Titlu;?>"/>
         <br>
         <br>
-        <label for="descriere"><strong>Descriere: </strong></label> <textarea name="descriere_eveniment" rows="4" cols="50"> <?php echo html_entity_decode($row->Descriere, ENT_QUOTES, 'UTF-8'); ?></textarea>
+        <label for="descriere_eveniment"><strong>Descriere: </strong></label> <textarea name="descriere_eveniment" rows="4" cols="50"> <?php echo html_entity_decode($row->Descriere, ENT_QUOTES, 'UTF-8'); ?></textarea>
         <br>
         <br>
         <label for="data"><strong>Data: </strong></label> <input type="date" name="data" value="<?php echo$row->Data;?>"/>
